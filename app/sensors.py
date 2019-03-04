@@ -3,8 +3,6 @@ from typing import Callable
 
 from base import InputSensor, OutputSensor
 
-from MQTT import MQTT
-
 
 class Laser(OutputSensor):
     _delay = 0.5
@@ -30,24 +28,10 @@ class Laser(OutputSensor):
 
 
 class Button(InputSensor):
-    is_on = False
-    mqtt = None
-
-    def __init__(self, pin: int):
-        super().__init__(pin)
-        try:
-            self.mqtt = MQTT()
-        except ConnectionError:
-            pass
+    _pressed = 0
 
     def listen_onclick(self, on_click_func: Callable):
         while True:
-            if self.gpio.input(self.pin) == 0:
-                self.is_on = not self.is_on
-                self.send_button_status()
+            if self.gpio.input(self.pin) == self._pressed:
                 on_click_func()
                 break
-
-    def send_button_status(self):
-        message = 'Button is ON' if self.is_on else 'Button is OFF'
-        self.mqtt.pulish(topic='signals/button', retain=True, payload=message)
